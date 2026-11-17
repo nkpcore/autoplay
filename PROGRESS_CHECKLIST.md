@@ -47,10 +47,10 @@
 - [x] T37 Supabase table + policy
 - [x] T38 tuneFromEvents script + GitHub Action
 ## Phase 8 — Rooms
-- [ ] T39 Supabase client + room create
-- [ ] T40 QR + Join page
-- [ ] T41 Requests + votes + vetoes
-- [ ] T42 Host rules
+- [x] T39 Supabase client + room create
+- [x] T40 QR + Join page
+- [x] T41 Requests + votes + vetoes
+- [x] T42 Host rules
 ## Phase 9 — Beats
 - [ ] T43 BPM estimator worker
 - [ ] T44 Snap cuts to beats

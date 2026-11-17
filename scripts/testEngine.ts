@@ -3,6 +3,7 @@ import { Engine } from '../src/engine/Engine.ts'
 import type { Deck, DeckStatus } from '../src/engine/types.ts'
 import type { Cue, EngineEvent } from '../src/data/types.ts'
 import { runPlannerSelfTests } from '../src/planner/selfTest.ts'
+import { estimateBpm, snapToBeat } from '../src/analysis/bpm.ts'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -239,6 +240,57 @@ async function runTests() {
   const catalogPath = path.resolve('public/songs.json')
   const rawCatalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8')) as Cue[]
   runPlannerSelfTests(rawCatalog)
+
+  console.log('\n--- Testing Phase 9: BPM Analysis & Transition Styles ---')
+  // 1. Synthetic 120 BPM signal (pulse every 0.5s at 44100Hz for 10s)
+  const sampleRate = 44100
+  const totalSamples = sampleRate * 10
+  const syntheticSignal = new Float32Array(totalSamples)
+  const pulseInterval = Math.round(sampleRate * 0.5) // 120 BPM
+  for (let p = 0; p < totalSamples; p += pulseInterval) {
+    for (let j = 0; j < 100 && p + j < totalSamples; j++) {
+      syntheticSignal[p + j] = 0.9
+    }
+  }
+
+  const bpmResult = estimateBpm(syntheticSignal, sampleRate)
+  console.log(`Estimated BPM from synthetic 120 BPM audio: ${bpmResult.bpm}`)
+  if (Math.abs(bpmResult.bpm - 120) > 3) {
+    throw new Error(`BPM estimation inaccurate: expected ~120, got ${bpmResult.bpm}`)
+  }
+  console.log('✓ estimateBpm accurately detected 120 BPM')
+
+  // 2. snapToBeat test
+  const snapped = snapToBeat(23.2, 120, 0) // 120 BPM -> bar = 2.0s. 23.2 -> nearest 24.0s
+  if (snapped !== 24) {
+    throw new Error(`snapToBeat failed: expected 24, got ${snapped}`)
+  }
+  console.log('✓ snapToBeat properly aligned timestamp to musical downbeat')
+
+  // 3. Transition styles test
+  const mockEngine = new Engine([deckA, deckB])
+  const slowCue: Cue = { ...cues[0]!, bpm: 120, energy: 5 }
+  const fastCue: Cue = { ...cues[1]!, bpm: 122, energy: 5 }
+  const hypeCue: Cue = { ...cues[1]!, bpm: 150, energy: 9 }
+  const chillCue: Cue = { ...cues[1]!, bpm: 80, energy: 3 }
+
+  const blendDuration = mockEngine.computeFadeDuration(slowCue, fastCue)
+  if (blendDuration !== 3000) {
+    throw new Error(`Expected 3000ms long blend for tempo compatible songs, got ${blendDuration}`)
+  }
+  console.log('✓ Long blend 3.0s chosen for tempo-compatible pair')
+
+  const cutDuration = mockEngine.computeFadeDuration(slowCue, hypeCue)
+  if (cutDuration !== 800) {
+    throw new Error(`Expected 800ms quick cut for energy jump, got ${cutDuration}`)
+  }
+  console.log('✓ Quick 0.8s cut chosen for energy jump')
+
+  const dropDuration = mockEngine.computeFadeDuration(hypeCue, chillCue)
+  if (dropDuration !== 2000) {
+    throw new Error(`Expected 2000ms smooth drop for energy drop, got ${dropDuration}`)
+  }
+  console.log('✓ Smooth 2.0s fade chosen for energy drop')
 
   console.log('\n===========================================')
   console.log('ALL PHASE 2 ENGINE TESTS PASSED PERFECTLY!')

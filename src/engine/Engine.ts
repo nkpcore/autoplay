@@ -3,6 +3,7 @@ import type { Deck, EngineListener, EngineState } from './types'
 import { equalPowerFade, type FadeHandle } from './crossfade'
 import { CONFIG } from '../config'
 import { canCrossfadeYouTube } from './platform'
+import { tempoCompatible } from '../planner/planSet'
 
 export class Engine {
   private decks: [Deck, Deck]
@@ -115,7 +116,23 @@ export class Engine {
     if (reason === 'exit' && this.current) {
       this.emit({ type: 'cut', cue: this.current })
     }
-    this.crossfade(reason === 'skip' ? 800 : CONFIG.FADE_MS)
+    const fadeDuration =
+      reason === 'skip' ? 800 : this.computeFadeDuration(this.current, next)
+    this.crossfade(fadeDuration)
+  }
+
+  computeFadeDuration(outgoingCue?: Cue, incomingCue?: Cue): number {
+    if (!outgoingCue || !incomingCue) return CONFIG.FADE_MS
+    if (tempoCompatible(outgoingCue, incomingCue)) {
+      return 3000 // long blend 3s
+    }
+    if (incomingCue.energy - outgoingCue.energy >= 3) {
+      return 800 // quick cut
+    }
+    if (outgoingCue.energy - incomingCue.energy >= 3) {
+      return 2000 // smooth drop
+    }
+    return CONFIG.FADE_MS
   }
 
   private crossfade(durationMs: number) {
@@ -123,6 +140,26 @@ export class Engine {
     const incoming = this.idle
     this.state = 'fading'
     incoming.setGain(0)
+
+    // Tempo nudge if supported on incoming deck (e.g. WebAudioDeck)
+    if ('setRate' in incoming && typeof (incoming as unknown as { setRate?: (r: number) => void }).setRate === 'function') {
+      const outBpm = outgoing.cue?.bpm
+      const inBpm = incoming.cue?.bpm
+      if (outBpm && inBpm) {
+        const ratio = outBpm / inBpm
+        if (ratio >= 0.94 && ratio <= 1.06) {
+          const rateDeck = incoming as unknown as { setRate: (r: number) => void }
+          rateDeck.setRate(ratio)
+          const t0 = performance.now()
+          const rampTimer = window.setInterval(() => {
+            const p = Math.min(1, (performance.now() - t0) / 8000)
+            rateDeck.setRate(ratio + (1.0 - ratio) * p)
+            if (p >= 1) window.clearInterval(rampTimer)
+          }, 100)
+        }
+      }
+    }
+
     incoming.play()
 
     if (this.useHardCut) {

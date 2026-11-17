@@ -1,0 +1,34 @@
+[
+  {
+    "song_id": "kala-chashma-amar-arshi",
+    "title": "Kala Chashma",
+    "artist": "Amar Arshi, Badshah, Neha Kakkar & Indeep Bakshi",
+    "youtube_ids": ["cCmZ7aFU1xY", "hAA9TQyxQxk", "YApjPA6CypU"],
+    "duration_sec": 192,
+    "entry_sec": 22,
+    "exit_sec": 129,
+    "play_full": false,
+    "era": "pre2020",
+    "language": "hindi",
+    "subtype": "dance",
+    "energy": 10,
+    "tags": [],
+    "unsure": true
+  },
+  {
+    "song_id": "FILL-ME-song-2",
+    "title": "FILL ME: song title",
+    "artist": "FILL ME: artist",
+    "youtube_ids": ["FILL_ME_ID1"],
+    "duration_sec": 200,
+    "entry_sec": 20,
+    "exit_sec": 140,
+    "play_full": false,
+    "era": "pre2020",
+    "language": "punjabi",
+    "subtype": "party",
+    "energy": 8,
+    "tags": [],
+    "unsure": true
+  }
+]

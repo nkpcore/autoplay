@@ -2,6 +2,9 @@ import { equalPowerFade } from '../src/engine/crossfade.ts'
 import { Engine } from '../src/engine/Engine.ts'
 import type { Deck, DeckStatus } from '../src/engine/types.ts'
 import type { Cue, EngineEvent } from '../src/data/types.ts'
+import { runPlannerSelfTests } from '../src/planner/selfTest.ts'
+import fs from 'node:fs'
+import path from 'node:path'
 
 // --- Mock Deck Implementation for Headless Testing ---
 class MockDeck implements Deck {
@@ -231,6 +234,11 @@ async function runTests() {
   }
   console.log('✓ Hard-cut mode switched immediately with zero delay')
   engine3.stopAll()
+
+  console.log('\n--- Testing Phase 4: Set Planner Self-Tests ---')
+  const catalogPath = path.resolve('public/songs.json')
+  const rawCatalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8')) as Cue[]
+  runPlannerSelfTests(rawCatalog)
 
   console.log('\n===========================================')
   console.log('ALL PHASE 2 ENGINE TESTS PASSED PERFECTLY!')

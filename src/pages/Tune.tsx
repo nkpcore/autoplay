@@ -666,8 +666,10 @@ export default function Tune() {
                   onChange={(e) => setEra(e.target.value as Era)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 text-sm text-white"
                 >
+                  <option value="pre2000">pre2000</option>
+                  <option value="2000s">2000s</option>
                   <option value="pre2020">pre2020</option>
-                  <option value="post2020">post2020</option>
+                  <option value="2020s">2020s</option>
                 </select>
               </div>
               <div className="flex items-center space-x-2 pt-6">

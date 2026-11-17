@@ -20,8 +20,8 @@
 - [x] T15 Pause/resume/skip/full-track + hotkeys
 - [x] T16 iPhone detection + hard-cut fallback
 ## Phase 3 — Tune tool
-- [ ] T17 Tune page basic player
-- [ ] T18 Tune hotkeys + export
+- [x] T17 Tune page basic player
+- [x] T18 Tune hotkeys + export
 ## Phase 4 — Set generator
 - [ ] T19 Seeded PRNG
 - [ ] T20 Filters

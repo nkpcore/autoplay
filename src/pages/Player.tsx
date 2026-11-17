@@ -160,8 +160,10 @@ export default function Player() {
   const isHardCut = modeParam === 'local' ? false : isIOS || searchParams.get('hardcut') === '1'
 
   // Broadcast room state helper
+  // Read directly from useStore.getState() to ensure fresh state without tearing down/recreating room listeners on queue/track changes
   const broadcastRoomState = useCallback(() => {
     if (!hostRoomRef.current) return
+    const { queue, index, currentCue } = useStore.getState()
     const guestItems = buildGuestSnapshot(
       queue.slice(index + 1),
       guestSongVotesRef.current,
@@ -177,7 +179,7 @@ export default function Player() {
       rules: roomRulesRef.current,
     }
     hostRoomRef.current.sendState(state)
-  }, [roomId, queue, index, currentCue])
+  }, [roomId])
 
   // Initialize Host Room (Phase 8)
   useEffect(() => {

@@ -23,11 +23,11 @@
 - [x] T17 Tune page basic player
 - [x] T18 Tune hotkeys + export
 ## Phase 4 — Set generator
-- [ ] T19 Seeded PRNG
-- [ ] T20 Filters
-- [ ] T21 Energy-arc planner
-- [ ] T22 Wizard UI
-- [ ] T23 Seed in URL + load more
+- [x] T19 Seeded PRNG
+- [x] T20 Filters
+- [x] T21 Energy-arc planner
+- [x] T22 Wizard UI
+- [x] T23 Seed in URL + load more
 ## Phase 5 — Main UI
 - [ ] T24 Player page layout + store
 - [ ] T25 Glow

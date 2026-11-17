@@ -73,6 +73,9 @@ export default function Home() {
           <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
             Never let the party vibe die.
           </h1>
+          <p className="text-pink-400/90 text-xs sm:text-sm font-medium">
+            Beta: song start times are still being tuned.
+          </p>
           <p className="text-zinc-400 text-sm sm:text-base max-w-sm mx-auto leading-relaxed">
             Continuous, equal-power hook-to-hook crossfading for YouTube &amp; local music. No awkward silence. Zero song bloat.
           </p>

@@ -7,7 +7,7 @@ import { Engine } from '../engine/Engine'
 import { createDecks, type Mode } from '../engine/deckFactory'
 import { resolveLocalFile } from '../state/localFiles'
 import { isIOS } from '../engine/platform'
-import { useStore, registerItemMeta, syncQueueFromEngine } from '../state/useStore'
+import { useStore, registerItemMeta, resetItemMeta, syncQueueFromEngine } from '../state/useStore'
 import { saveSet } from '../data/mySets'
 import { keepAwake, setMediaSession } from '../utils/mediaSession'
 import { logEvent } from '../services/telemetry'
@@ -401,6 +401,7 @@ export default function Player() {
 
   // 2. Start the Party via StartGate User Gesture
   const handleStartParty = async () => {
+    resetItemMeta()
     if (!mountARef.current || !mountBRef.current || queue.length === 0) return
 
     try {

@@ -5,6 +5,10 @@ import type { EngineState } from '../engine/types'
 
 const metaMap = new Map<string, { source: 'planner' | 'guest' | 'host'; requestedBy?: string }>()
 
+export function resetItemMeta() {
+  metaMap.clear()
+}
+
 export function registerItemMeta(
   songId: string,
   meta: { source: 'planner' | 'guest' | 'host'; requestedBy?: string },

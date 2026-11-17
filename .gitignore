@@ -13,7 +13,10 @@ tune-report.md
 node_modules
 dist
 dist-ssr
+.env
+.env.local
 *.local
+.wrangler
 
 # Editor directories and files
 .vscode/*

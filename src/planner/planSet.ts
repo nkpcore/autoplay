@@ -86,7 +86,6 @@ export function planSet(
       // Opening slot constraint
       if (slot === 0 && history.length === 0) {
         if (cue.energy < target - 1) score -= 5
-        if (cue.verified) score += 2
       }
 
       // Closeness to target energy

@@ -9,7 +9,7 @@
 - [x] T05 Validation + loadSongs
 - [x] T06 Seed songs.json (human supplies data)
 ## Phase 2 — YouTube engine
-- [ ] T07 YouTube API loader
+- [x] T07 YouTube API loader
 - [ ] T08 YouTubeDeck: play one cue
 - [ ] T09 Preload + pause at entry
 - [ ] T10 Two decks + manual crossfade button

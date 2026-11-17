@@ -7,7 +7,7 @@
 ## Phase 1 — Data
 - [x] T04 Types
 - [x] T05 Validation + loadSongs
-- [ ] T06 Seed songs.json (human supplies data)
+- [x] T06 Seed songs.json (human supplies data)
 ## Phase 2 — YouTube engine
 - [ ] T07 YouTube API loader
 - [ ] T08 YouTubeDeck: play one cue

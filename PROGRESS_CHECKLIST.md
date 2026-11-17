@@ -43,9 +43,9 @@
 - [x] T34 Loudness measure + gain
 - [x] T35 Deck factory in Engine
 ## Phase 7 — Telemetry
-- [ ] T36 Event logger
-- [ ] T37 Supabase table + policy
-- [ ] T38 tuneFromEvents script + GitHub Action
+- [x] T36 Event logger
+- [x] T37 Supabase table + policy
+- [x] T38 tuneFromEvents script + GitHub Action
 ## Phase 8 — Rooms
 - [ ] T39 Supabase client + room create
 - [ ] T40 QR + Join page

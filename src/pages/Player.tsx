@@ -18,6 +18,15 @@ import QueueList from '../components/QueueList'
 import SearchModal from '../components/SearchModal'
 import Hotkeys from '../components/Hotkeys'
 import StartGate from '../components/StartGate'
+import RoomModal from '../components/RoomModal'
+import {
+  createHostRoom,
+  makeRoomId,
+  type HostRoom,
+  type RoomState,
+  type QueuedGuestSong,
+  type RoomRules,
+} from '../services/rooms'
 
 export default function Player() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -50,6 +59,21 @@ export default function Player() {
   const [saveSetName, setSaveSetName] = useState('')
   const [isSavingSet, setIsSavingSet] = useState(false)
 
+  // Room state (Phase 8)
+  const [roomId] = useState<string>(() => makeRoomId())
+  const [isRoomOpen, setIsRoomOpen] = useState(false)
+  const hostRoomRef = useRef<HostRoom | null>(null)
+  const guestVetoesRef = useRef<Set<string>>(new Set())
+  const guestLastReqTimeRef = useRef<Map<string, number>>(new Map())
+
+  const roomRulesRef = useRef<RoomRules>({
+    maxRequestsPerGuest: 3,
+    approveAll: false,
+    blockedSubtypes: [],
+    vetoThreshold: 3,
+    cooldownSec: 20,
+  })
+
   // Decks & Engine references
   const mountARef = useRef<HTMLDivElement>(null)
   const mountBRef = useRef<HTMLDivElement>(null)
@@ -66,6 +90,68 @@ export default function Player() {
 
   const modeParam = (searchParams.get('mode') as Mode) || 'youtube'
   const isHardCut = modeParam === 'local' ? false : isIOS || searchParams.get('hardcut') === '1'
+
+  // Broadcast room state helper
+  const broadcastRoomState = useCallback(() => {
+    if (!hostRoomRef.current) return
+    const guestItems: QueuedGuestSong[] = queue
+      .slice(index + 1)
+      .filter((item) => item.source === 'guest')
+      .map((item) => ({
+        songId: item.cue.song_id,
+        title: item.cue.title,
+        artist: item.cue.artist,
+        votes: 1,
+        byGuestId: item.requestedBy || 'guest',
+        requestedAt: Date.now(),
+      }))
+
+    const state: RoomState = {
+      roomId,
+      nowPlayingId: currentCue?.song_id ?? null,
+      nowPlayingTitle: currentCue?.title ?? null,
+      nowPlayingArtist: currentCue?.artist ?? null,
+      queue: guestItems,
+      rules: roomRulesRef.current,
+    }
+    hostRoomRef.current.sendState(state)
+  }, [roomId, queue, index, currentCue])
+
+  // Initialize Host Room (Phase 8)
+  useEffect(() => {
+    const room = createHostRoom(roomId, (msg) => {
+      if (msg.kind === 'hello') {
+        broadcastRoomState()
+      } else if (msg.kind === 'request') {
+        const lastTime = guestLastReqTimeRef.current.get(msg.guestId) || 0
+        if (Date.now() - lastTime < roomRulesRef.current.cooldownSec * 1000) return
+        const matchingCue = catalog.find((c) => c.song_id === msg.songId)
+        if (matchingCue) {
+          guestLastReqTimeRef.current.set(msg.guestId, Date.now())
+          playNext(matchingCue, 'guest')
+          setStatusMessage(`Guest requested: "${matchingCue.title}"`)
+          setTimeout(() => setStatusMessage(null), 3000)
+        }
+      } else if (msg.kind === 'veto') {
+        guestVetoesRef.current.add(msg.guestId)
+        if (guestVetoesRef.current.size >= roomRulesRef.current.vetoThreshold) {
+          setStatusMessage('Song vetoed by crowd!')
+          engineRef.current?.skip()
+          guestVetoesRef.current.clear()
+        }
+      }
+    })
+    hostRoomRef.current = room
+
+    const broadcastInterval = window.setInterval(() => {
+      broadcastRoomState()
+    }, 1500)
+
+    return () => {
+      window.clearInterval(broadcastInterval)
+      room?.close()
+    }
+  }, [roomId, catalog, broadcastRoomState, playNext])
 
   // 1. Initial Queue Resolution
   useEffect(() => {
@@ -283,6 +369,13 @@ export default function Player() {
         onAddToEnd={(cue) => addToQueue(cue, 'host')}
       />
 
+      {/* Room Modal (Phase 8) */}
+      <RoomModal
+        isOpen={isRoomOpen}
+        onClose={() => setIsRoomOpen(false)}
+        roomId={roomId}
+      />
+
       {/* Hidden/Collapsible YouTube Player Decks (T08, T09) */}
       <div
         className={`fixed z-30 transition-all duration-300 ${
@@ -313,6 +406,12 @@ export default function Player() {
         </div>
 
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setIsRoomOpen(true)}
+            className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer shadow"
+          >
+            Room QR
+          </button>
           <button
             onClick={() => setShowDecks((prev) => !prev)}
             title="Toggle video tiles"

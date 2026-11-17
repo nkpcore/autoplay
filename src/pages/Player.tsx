@@ -4,7 +4,8 @@ import type { Cue, Answers, Phase, Crowd, EngineEvent } from '../data/types'
 import { loadSongs } from '../data/loadSongs'
 import { planSet } from '../planner/planSet'
 import { Engine } from '../engine/Engine'
-import { YouTubeDeck } from '../engine/YouTubeDeck'
+import { createDecks, type Mode } from '../engine/deckFactory'
+import { resolveLocalFile } from '../state/localFiles'
 import { isIOS } from '../engine/platform'
 import { useStore } from '../state/useStore'
 import { saveSet } from '../data/mySets'
@@ -62,7 +63,8 @@ export default function Player() {
   const seedParam = searchParams.get('seed')
   const batchNParam = parseInt(searchParams.get('n') || '1', 10)
 
-  const isHardCut = isIOS || searchParams.get('hardcut') === '1'
+  const modeParam = (searchParams.get('mode') as Mode) || 'youtube'
+  const isHardCut = modeParam === 'local' ? false : isIOS || searchParams.get('hardcut') === '1'
 
   // 1. Initial Queue Resolution
   useEffect(() => {
@@ -125,8 +127,21 @@ export default function Player() {
     try {
       await keepAwake()
 
-      const deckA = await YouTubeDeck.create('A', mountARef.current)
-      const deckB = await YouTubeDeck.create('B', mountBRef.current)
+      let audioCtx: AudioContext | undefined
+      if (modeParam === 'local') {
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+        audioCtx = new AudioContextClass()
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume()
+        }
+      }
+
+      const [deckA, deckB] = await createDecks(
+        modeParam,
+        mountARef.current,
+        resolveLocalFile,
+        audioCtx,
+      )
 
       const engine = new Engine([deckA, deckB], { hardCut: isHardCut })
       engineRef.current = engine

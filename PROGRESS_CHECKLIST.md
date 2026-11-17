@@ -29,14 +29,14 @@
 - [x] T22 Wizard UI
 - [x] T23 Seed in URL + load more
 ## Phase 5 — Main UI
-- [ ] T24 Player page layout + store
-- [ ] T25 Glow
-- [ ] T26 Waveform + scrub
-- [ ] T27 Queue list
-- [ ] T28 Search + add
-- [ ] T29 My sets (localStorage + share URL)
-- [ ] T30 Wake lock + Media Session
-- [ ] T31 PWA
+- [x] T24 Player page layout + store
+- [x] T25 Glow
+- [x] T26 Waveform + scrub
+- [x] T27 Queue list
+- [x] T28 Search + add
+- [x] T29 My sets (localStorage + share URL)
+- [x] T30 Wake lock + Media Session
+- [x] T31 PWA
 ## Phase 6 — Local files (Web Audio)
 - [ ] T32 File import UI
 - [ ] T33 WebAudioDeck

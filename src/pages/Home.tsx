@@ -1,7 +1,40 @@
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { processLocalFiles } from '../state/localFiles'
+import { useStore } from '../state/useStore'
 
 export default function Home() {
   const navigate = useNavigate()
+  const setQueue = useStore((s) => s.setQueue)
+  const setCurrentCue = useStore((s) => s.setCurrentCue)
+  const [importing, setImporting] = useState(false)
+  const [progressText, setProgressText] = useState('')
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    try {
+      setImporting(true)
+      const fileList = Array.from(files)
+      setProgressText(`Processing 0/${fileList.length} tracks...`)
+
+      const cues = await processLocalFiles(fileList, (cur, total) => {
+        setProgressText(`Analyzing & equalizing track ${cur}/${total}...`)
+      })
+
+      if (cues.length > 0) {
+        setQueue(cues.map((c) => ({ cue: c, source: 'planner' })))
+        setCurrentCue(cues[0] ?? null)
+        navigate('/play?mode=local')
+      }
+    } catch (err) {
+      alert(`Error importing local files: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setImporting(false)
+      setProgressText('')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between p-6 max-w-lg mx-auto relative overflow-hidden">
@@ -56,10 +89,23 @@ export default function Home() {
 
           <button
             onClick={() => navigate('/sets')}
-            className="w-full py-3.5 px-6 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-bold text-sm transition-all cursor-pointer"
+            className="w-full py-3 px-6 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-bold text-sm transition-all cursor-pointer"
           >
             My Saved Sets
           </button>
+
+          {/* Local Music File Picker (T32) */}
+          <label className="block w-full py-3 px-6 rounded-2xl bg-zinc-900/60 hover:bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 font-semibold text-xs transition-all cursor-pointer">
+            {importing ? progressText : 'Use my own music (MP3/WAV/FLAC)'}
+            <input
+              type="file"
+              accept="audio/*"
+              multiple
+              disabled={importing}
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
         </div>
       </main>
 

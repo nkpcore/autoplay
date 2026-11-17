@@ -10,15 +10,15 @@
 - [x] T06 Seed songs.json (human supplies data)
 ## Phase 2 — YouTube engine
 - [x] T07 YouTube API loader
-- [ ] T08 YouTubeDeck: play one cue
-- [ ] T09 Preload + pause at entry
-- [ ] T10 Two decks + manual crossfade button
-- [ ] T11 Tick + automatic handoff
-- [ ] T12 Holding (buffer guard)
-- [ ] T13 Fallback IDs + watchdog
-- [ ] T14 Start gate (user gesture)
-- [ ] T15 Pause/resume/skip/full-track + hotkeys
-- [ ] T16 iPhone detection + hard-cut fallback
+- [x] T08 YouTubeDeck: play one cue
+- [x] T09 Preload + pause at entry
+- [x] T10 Two decks + manual crossfade button
+- [x] T11 Tick + automatic handoff
+- [x] T12 Holding (buffer guard)
+- [x] T13 Fallback IDs + watchdog
+- [x] T14 Start gate (user gesture)
+- [x] T15 Pause/resume/skip/full-track + hotkeys
+- [x] T16 iPhone detection + hard-cut fallback
 ## Phase 3 — Tune tool
 - [ ] T17 Tune page basic player
 - [ ] T18 Tune hotkeys + export

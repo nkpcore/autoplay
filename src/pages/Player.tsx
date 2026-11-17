@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import type { Cue, Answers, Phase, Crowd, EngineEvent } from '../data/types'
+import type { Cue, Answers, Phase, Crowd, EngineEvent, QueueItem } from '../data/types'
 import { loadSongs } from '../data/loadSongs'
 import { planSet } from '../planner/planSet'
 import { Engine } from '../engine/Engine'
 import { createDecks, type Mode } from '../engine/deckFactory'
 import { resolveLocalFile } from '../state/localFiles'
 import { isIOS } from '../engine/platform'
-import { useStore } from '../state/useStore'
+import { useStore, registerItemMeta, syncQueueFromEngine } from '../state/useStore'
 import { saveSet } from '../data/mySets'
 import { keepAwake, setMediaSession } from '../utils/mediaSession'
 import { logEvent } from '../services/telemetry'
@@ -19,15 +19,24 @@ import SearchModal from '../components/SearchModal'
 import Hotkeys from '../components/Hotkeys'
 import StartGate from '../components/StartGate'
 import RoomModal from '../components/RoomModal'
+import { HostRulesModal } from '../components/HostRulesModal'
 import DebugPanel from '../components/DebugPanel'
 import {
   createHostRoom,
   makeRoomId,
   type HostRoom,
   type RoomState,
-  type QueuedGuestSong,
   type RoomRules,
 } from '../services/rooms'
+import {
+  type PendingRequest,
+  type GuestVoteMap,
+  applyGuestVote,
+  isSubtypeBlocked,
+  countGuestActiveRequests,
+  reorderGuestQueue,
+  buildGuestSnapshot,
+} from '../services/roomHostLogic'
 
 export default function Player() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -64,22 +73,79 @@ export default function Player() {
   // Room state (Phase 8)
   const [roomId] = useState<string>(() => makeRoomId())
   const [isRoomOpen, setIsRoomOpen] = useState(false)
-  const hostRoomRef = useRef<HostRoom | null>(null)
-  const guestVetoesRef = useRef<Set<string>>(new Set())
-  const guestLastReqTimeRef = useRef<Map<string, number>>(new Map())
-
-  const roomRulesRef = useRef<RoomRules>({
+  const [isRulesOpen, setIsRulesOpen] = useState(false)
+  const [roomRules, setRoomRules] = useState<RoomRules>({
     maxRequestsPerGuest: 3,
     approveAll: false,
     blockedSubtypes: [],
     vetoThreshold: 3,
     cooldownSec: 20,
   })
+  const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
+  const pendingRequestsRef = useRef<PendingRequest[]>([])
+  useEffect(() => {
+    pendingRequestsRef.current = pendingRequests
+  }, [pendingRequests])
+
+  const hostRoomRef = useRef<HostRoom | null>(null)
+  const guestVetoesRef = useRef<Set<string>>(new Set())
+  const guestLastReqTimeRef = useRef<Map<string, number>>(new Map())
+  const guestSongVotesRef = useRef<GuestVoteMap>(new Map())
+  const guestRequestTimeRef = useRef<Map<string, number>>(new Map())
+
+  const roomRulesRef = useRef<RoomRules>(roomRules)
+  useEffect(() => {
+    roomRulesRef.current = roomRules
+  }, [roomRules])
+
+  const availableSubtypes = useMemo(() => {
+    const set = new Set<string>()
+    for (const c of catalog) {
+      if (c.subtype) set.add(c.subtype)
+    }
+    return Array.from(set).sort()
+  }, [catalog])
+
+  const handleApprovePendingRequest = useCallback(
+    (req: PendingRequest) => {
+      setPendingRequests((prev) => prev.filter((p) => p.id !== req.id))
+      registerItemMeta(req.cue.song_id, { source: 'guest', requestedBy: req.guestId })
+
+      const currentQ = useStore.getState().queue
+      const currentIdx = useStore.getState().index
+      const remaining = currentQ.slice(currentIdx + 1)
+      const newItem: QueueItem = {
+        cue: req.cue,
+        source: 'guest',
+        requestedBy: req.guestId,
+      }
+      const updated = [...currentQ.slice(0, currentIdx + 1), newItem, ...remaining]
+      const reordered = reorderGuestQueue(
+        updated,
+        currentIdx,
+        guestSongVotesRef.current,
+        guestRequestTimeRef.current,
+      )
+
+      const eng = useStore.getState().engine
+      if (eng) {
+        eng.setUpcomingQueue(reordered.slice(currentIdx + 1).map((item) => item.cue))
+      } else {
+        setQueue(reordered)
+      }
+      setStatusMessage(`Approved: "${req.cue.title}"`)
+      setTimeout(() => setStatusMessage(null), 3000)
+    },
+    [setQueue, setStatusMessage],
+  )
+
+  const handleRejectPendingRequest = useCallback((reqId: string) => {
+    setPendingRequests((prev) => prev.filter((p) => p.id !== reqId))
+  }, [])
 
   // Decks & Engine references
   const mountARef = useRef<HTMLDivElement>(null)
   const mountBRef = useRef<HTMLDivElement>(null)
-  const engineRef = useRef<Engine | null>(null)
 
   // URL Query Parameters
   const idsParam = searchParams.get('ids')
@@ -96,17 +162,11 @@ export default function Player() {
   // Broadcast room state helper
   const broadcastRoomState = useCallback(() => {
     if (!hostRoomRef.current) return
-    const guestItems: QueuedGuestSong[] = queue
-      .slice(index + 1)
-      .filter((item) => item.source === 'guest')
-      .map((item) => ({
-        songId: item.cue.song_id,
-        title: item.cue.title,
-        artist: item.cue.artist,
-        votes: 1,
-        byGuestId: item.requestedBy || 'guest',
-        requestedAt: Date.now(),
-      }))
+    const guestItems = buildGuestSnapshot(
+      queue.slice(index + 1),
+      guestSongVotesRef.current,
+      guestRequestTimeRef.current,
+    )
 
     const state: RoomState = {
       roomId,
@@ -124,21 +184,135 @@ export default function Player() {
     const room = createHostRoom(roomId, (msg) => {
       if (msg.kind === 'hello') {
         broadcastRoomState()
-      } else if (msg.kind === 'request') {
-        const lastTime = guestLastReqTimeRef.current.get(msg.guestId) || 0
-        if (Date.now() - lastTime < roomRulesRef.current.cooldownSec * 1000) return
-        const matchingCue = catalog.find((c) => c.song_id === msg.songId)
-        if (matchingCue) {
-          guestLastReqTimeRef.current.set(msg.guestId, Date.now())
-          playNext(matchingCue, 'guest')
-          setStatusMessage(`Guest requested: "${matchingCue.title}"`)
-          setTimeout(() => setStatusMessage(null), 3000)
+      } else if (msg.kind === 'vote') {
+        applyGuestVote(guestSongVotesRef.current, msg.songId, msg.guestId, msg.dir)
+        const currentQ = useStore.getState().queue
+        const currentIdx = useStore.getState().index
+        const isUpcoming = currentQ.slice(currentIdx + 1).some((item) => item.cue.song_id === msg.songId)
+        if (isUpcoming) {
+          const reordered = reorderGuestQueue(
+            currentQ,
+            currentIdx,
+            guestSongVotesRef.current,
+            guestRequestTimeRef.current,
+          )
+          const eng = useStore.getState().engine
+          if (eng) {
+            eng.setUpcomingQueue(reordered.slice(currentIdx + 1).map((item) => item.cue))
+          } else {
+            setQueue(reordered)
+          }
         }
+        broadcastRoomState()
+      } else if (msg.kind === 'request') {
+        const rules = roomRulesRef.current
+        const now = Date.now()
+
+        // 1. Check cooldown
+        const lastTime = guestLastReqTimeRef.current.get(msg.guestId) || 0
+        if (now - lastTime < rules.cooldownSec * 1000) return
+
+        // 2. Find matching cue
+        const matchingCue = catalog.find((c) => c.song_id === msg.songId)
+        if (!matchingCue) return
+
+        // 3. Check blockedSubtypes
+        if (matchingCue.subtype && isSubtypeBlocked(matchingCue.subtype, rules.blockedSubtypes)) {
+          return
+        }
+
+        const currentQ = useStore.getState().queue
+        const currentIdx = useStore.getState().index
+        const remainingQueue = currentQ.slice(currentIdx + 1)
+
+        // 4. Check if currently playing
+        if (useStore.getState().currentCue?.song_id === msg.songId) {
+          return
+        }
+
+        // 5. Duplicate request: check pending requests
+        const isPending = pendingRequestsRef.current.some((p) => p.cue.song_id === msg.songId)
+        if (isPending) {
+          applyGuestVote(guestSongVotesRef.current, msg.songId, msg.guestId, 1)
+          guestLastReqTimeRef.current.set(msg.guestId, now)
+          broadcastRoomState()
+          return
+        }
+
+        // Check if already in upcoming queue: merge duplicate requests into votes
+        const existingQueued = remainingQueue.find((item) => item.cue.song_id === msg.songId)
+        if (existingQueued) {
+          applyGuestVote(guestSongVotesRef.current, msg.songId, msg.guestId, 1)
+          guestLastReqTimeRef.current.set(msg.guestId, now)
+          const reordered = reorderGuestQueue(
+            currentQ,
+            currentIdx,
+            guestSongVotesRef.current,
+            guestRequestTimeRef.current,
+          )
+          const eng = useStore.getState().engine
+          if (eng) {
+            eng.setUpcomingQueue(reordered.slice(currentIdx + 1).map((item) => item.cue))
+          } else {
+            setQueue(reordered)
+          }
+          broadcastRoomState()
+          return
+        }
+
+        // 6. Enforce maxRequestsPerGuest
+        const activeCount = countGuestActiveRequests(remainingQueue, pendingRequestsRef.current, msg.guestId)
+        if (activeCount >= rules.maxRequestsPerGuest) {
+          return
+        }
+
+        guestLastReqTimeRef.current.set(msg.guestId, now)
+        guestRequestTimeRef.current.set(msg.songId, now)
+        applyGuestVote(guestSongVotesRef.current, msg.songId, msg.guestId, 1)
+
+        // 7. Enforce approveAll
+        if (rules.approveAll) {
+          const newPending: PendingRequest = {
+            id: `req-${now}-${Math.random().toString(36).slice(2, 7)}`,
+            cue: matchingCue,
+            guestId: msg.guestId,
+            requestedAt: now,
+          }
+          setPendingRequests((prev) => [...prev, newPending])
+          setStatusMessage(`Pending request from guest: "${matchingCue.title}"`)
+          setTimeout(() => setStatusMessage(null), 3000)
+          broadcastRoomState()
+          return
+        }
+
+        // Direct queue insertion
+        registerItemMeta(matchingCue.song_id, { source: 'guest', requestedBy: msg.guestId })
+        const newItem: QueueItem = {
+          cue: matchingCue,
+          source: 'guest',
+          requestedBy: msg.guestId,
+        }
+        const updated = [...currentQ.slice(0, currentIdx + 1), newItem, ...remainingQueue]
+        const reordered = reorderGuestQueue(
+          updated,
+          currentIdx,
+          guestSongVotesRef.current,
+          guestRequestTimeRef.current,
+        )
+        const eng = useStore.getState().engine
+        if (eng) {
+          eng.setUpcomingQueue(reordered.slice(currentIdx + 1).map((item) => item.cue))
+        } else {
+          setQueue(reordered)
+        }
+        setStatusMessage(`Guest requested: "${matchingCue.title}"`)
+        setTimeout(() => setStatusMessage(null), 3000)
+        broadcastRoomState()
       } else if (msg.kind === 'veto') {
         guestVetoesRef.current.add(msg.guestId)
         if (guestVetoesRef.current.size >= roomRulesRef.current.vetoThreshold) {
           setStatusMessage('Song vetoed by crowd!')
-          engineRef.current?.skip()
+          useStore.getState().engine?.skip()
           guestVetoesRef.current.clear()
         }
       }
@@ -153,7 +327,7 @@ export default function Player() {
       window.clearInterval(broadcastInterval)
       room?.close()
     }
-  }, [roomId, catalog, broadcastRoomState, playNext, setStatusMessage])
+  }, [roomId, catalog, broadcastRoomState, setQueue, setStatusMessage])
 
   // 1. Initial Queue Resolution
   useEffect(() => {
@@ -247,8 +421,21 @@ export default function Player() {
       )
 
       const engine = new Engine([deckA, deckB], { hardCut: isHardCut })
-      engineRef.current = engine
       setEngine(engine)
+
+      // Register initial cues metadata
+      queue.forEach((item) => {
+        registerItemMeta(item.cue.song_id, { source: item.source, requestedBy: item.requestedBy })
+      })
+
+      // Subscribe to Engine Queue Changes (Single Source of Truth)
+      engine.onQueueChange(() => {
+        const synced = syncQueueFromEngine(engine)
+        setQueue(synced)
+        setIndex(engine.index)
+        setCurrentCue(engine.current ?? null)
+        broadcastRoomState()
+      })
 
       // Engine Event Listeners
       engine.on((e: EngineEvent) => {
@@ -264,11 +451,13 @@ export default function Player() {
           setTimeout(() => setStatusMessage(null), 4000)
         } else if (e.type === 'live') {
           setStatusMessage(null)
+          guestVetoesRef.current.clear()
           setMediaSession(e.cue, {
             play: () => engine.resume(),
             pause: () => engine.pause(),
             next: () => engine.skip(),
           })
+          broadcastRoomState()
         }
       })
 
@@ -283,7 +472,7 @@ export default function Player() {
 
   // 3. Infinite Set / Load More Check (T23)
   useEffect(() => {
-    if (!started || !engineRef.current || catalog.length === 0 || !langParam || !seedParam) return
+    if (!started || !engine || catalog.length === 0 || !langParam || !seedParam) return
 
     // Trigger load more when 5 or fewer songs remain in the queue
     const remaining = queue.length - index
@@ -308,10 +497,14 @@ export default function Player() {
       })
 
       if (nextBatch.cues.length > 0) {
-        const newItems = nextBatch.cues.map((c) => ({ cue: c, source: 'planner' as const }))
-        setQueue([...queue, ...newItems])
-        if (engineRef.current) {
-          engineRef.current.queue.push(...nextBatch.cues)
+        nextBatch.cues.forEach((c) => {
+          registerItemMeta(c.song_id, { source: 'planner' })
+        })
+        if (engine) {
+          engine.appendToQueue(nextBatch.cues)
+        } else {
+          const newItems = nextBatch.cues.map((c) => ({ cue: c, source: 'planner' as const }))
+          setQueue([...queue, ...newItems])
         }
 
         // Update URL query with next batch number
@@ -322,6 +515,7 @@ export default function Player() {
     }
   }, [
     started,
+    engine,
     index,
     queue,
     catalog,
@@ -348,7 +542,8 @@ export default function Player() {
 
   // Seek handler
   const handleSeek = useCallback((toSec: number) => {
-    engineRef.current?.seekLive(toSec)
+    const eng = useStore.getState().engine
+    eng?.seekLive(toSec)
   }, [])
 
   if (loading) {
@@ -392,6 +587,21 @@ export default function Player() {
         roomId={roomId}
       />
 
+      {/* Host Rules Modal (Phase 8 T42) */}
+      <HostRulesModal
+        isOpen={isRulesOpen}
+        onClose={() => setIsRulesOpen(false)}
+        rules={roomRules}
+        onUpdateRules={(newRules) => {
+          setRoomRules(newRules)
+          broadcastRoomState()
+        }}
+        pendingRequests={pendingRequests}
+        onApproveRequest={handleApprovePendingRequest}
+        onRejectRequest={handleRejectPendingRequest}
+        availableSubtypes={availableSubtypes}
+      />
+
       {/* Hidden/Collapsible YouTube Player Decks (T08, T09) */}
       <div
         className={`fixed z-30 transition-all duration-300 ${
@@ -427,6 +637,17 @@ export default function Player() {
             className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer shadow"
           >
             Room QR
+          </button>
+          <button
+            onClick={() => setIsRulesOpen(true)}
+            className="relative px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 text-xs font-semibold rounded-lg cursor-pointer flex items-center gap-1.5"
+          >
+            <span>Rules</span>
+            {pendingRequests.length > 0 && (
+              <span className="w-4 h-4 rounded-full bg-pink-500 text-white text-[10px] flex items-center justify-center font-bold">
+                {pendingRequests.length}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setShowDecks((prev) => !prev)}
@@ -514,6 +735,11 @@ export default function Player() {
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-pink-950/80 border border-pink-700/60 font-mono font-bold text-pink-300">
                 E{currentCue.energy}
               </span>
+              {currentCue.bpm && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-700/60 font-mono font-bold text-cyan-300">
+                  {Math.round(currentCue.bpm)} BPM
+                </span>
+              )}
               {currentCue.play_full && (
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-950/80 border border-indigo-700/60 font-bold text-indigo-300">
                   Full Track

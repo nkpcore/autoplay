@@ -82,6 +82,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono">
                       E{cue.energy}
                     </span>
+                    {cue.bpm && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-cyan-300 font-mono">
+                        {Math.round(cue.bpm)} BPM
+                      </span>
+                    )}
                     <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 capitalize">
                       {cue.language}
                     </span>

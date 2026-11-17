@@ -62,6 +62,11 @@ export const QueueList: React.FC<QueueListProps> = ({
                     <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono">
                       E{item.cue.energy}
                     </span>
+                    {item.cue.bpm && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-cyan-300 font-mono">
+                        {Math.round(item.cue.bpm)} BPM
+                      </span>
+                    )}
                     {item.source === 'guest' && (
                       <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-700/50">
                         Guest

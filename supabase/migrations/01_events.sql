@@ -1,29 +1,25 @@
--- PartyAux Supabase Telemetry Schema
--- Only anonymous inserts allowed. No public reads.
-
+-- Telemetry events. Anonymous clients may INSERT only.
 create table if not exists public.events (
   id bigint generated always as identity primary key,
   type text not null,
-  song_id text not null,
-  from_sec numeric(6, 2),
-  to_sec numeric(6, 2),
-  session uuid not null,
+  song_id text,
+  from_sec real,
+  to_sec real,
+  session text,
   created_at timestamptz not null default now()
 );
 
--- Enable Row Level Security (RLS)
 alter table public.events enable row level security;
 
--- Insert-only policy for anon role (client cannot read or delete events)
-create policy "Anon clients can insert events"
+-- Insert-only policy for anon role restricted by allowed event types and seconds range (Doc 04 section 5)
+create policy "anon can insert events"
   on public.events
   for insert
   to anon
-  with check (true);
+  with check (
+    type in ('live','seek','skip','cut','playfull','paused','resumed','holding','unavailable','finished')
+    and (from_sec is null or (from_sec >= 0 and from_sec < 20000))
+    and (to_sec   is null or (to_sec   >= 0 and to_sec   < 20000))
+  );
 
--- Index for nightly aggregation queries
-create index if not exists idx_events_type_created
-  on public.events (type, created_at desc);
-
-create index if not exists idx_events_song_id
-  on public.events (song_id);
+create index if not exists events_song_type_idx on public.events (song_id, type, created_at desc);

@@ -12,6 +12,10 @@ export class Engine {
   private fade: FadeHandle | null = null
   private listeners = new Set<EngineListener>()
   private preloadToken = 0
+  private tempoRampTimer?: number
+  private rampingDeck: { deck: Deck; songId: string } | null = null
+  private pendingUpcoming: Cue[] | null = null
+  private queueListeners = new Set<() => void>()
   private useHardCut: boolean
 
   queue: Cue[] = []
@@ -34,6 +38,45 @@ export class Engine {
     this.listeners.forEach((l) => l(e))
   }
 
+  onQueueChange(cb: () => void): () => void {
+    this.queueListeners.add(cb)
+    return () => {
+      this.queueListeners.delete(cb)
+    }
+  }
+
+  private notifyQueue() {
+    this.queueListeners.forEach((cb) => cb())
+  }
+
+  /** Songs after the current one, including any change waiting for a fade to end. */
+  private upcomingBase(): Cue[] {
+    return this.pendingUpcoming ?? this.queue.slice(this.index + 1)
+  }
+
+  /** Replace every song AFTER the current one. Safe to call at any time. */
+  setUpcomingQueue(upcoming: Cue[]) {
+    if (this.state === 'fading') {
+      this.pendingUpcoming = upcoming
+      return
+    }
+    this.queue = [...this.queue.slice(0, this.index + 1), ...upcoming]
+    this.notifyQueue()
+    void this.preloadNext()
+  }
+
+  playNext(cue: Cue) {
+    this.setUpcomingQueue([cue, ...this.upcomingBase()])
+  }
+
+  appendToQueue(cues: Cue[]) {
+    this.setUpcomingQueue([...this.upcomingBase(), ...cues])
+  }
+
+  removeUpcoming(songId: string) {
+    this.setUpcomingQueue(this.upcomingBase().filter((c) => c.song_id !== songId))
+  }
+
   get live(): Deck {
     const deck = this.decks[this.liveIdx]
     if (!deck) throw new Error('Deck index out of bounds')
@@ -53,7 +96,9 @@ export class Engine {
   /** Replace the queue and start playing from startIndex. MUST be called from a user tap. */
   async start(queue: Cue[], startIndex = 0): Promise<void> {
     this.stopAll()
+    this.liveIdx = 0
     this.queue = queue
+    this.notifyQueue()
     this.index = startIndex
     const first = this.queue[this.index]
     if (!first) return
@@ -148,13 +193,32 @@ export class Engine {
       if (outBpm && inBpm) {
         const ratio = outBpm / inBpm
         if (ratio >= 0.94 && ratio <= 1.06) {
+          const targetDeck = incoming
+          const targetSongId = incoming.cue?.song_id ?? ''
           const rateDeck = incoming as unknown as { setRate: (r: number) => void }
+          this.cancelTempoRamp()
+          this.rampingDeck = { deck: targetDeck, songId: targetSongId }
           rateDeck.setRate(ratio)
           const t0 = performance.now()
-          const rampTimer = window.setInterval(() => {
+          this.tempoRampTimer = window.setInterval(() => {
+            // Cancel if deck emptied or loaded with another song
+            if (
+              targetDeck.status === 'empty' ||
+              (targetSongId !== '' && targetDeck.cue?.song_id !== targetSongId)
+            ) {
+              this.cancelTempoRamp()
+              return
+            }
+
             const p = Math.min(1, (performance.now() - t0) / 8000)
             rateDeck.setRate(ratio + (1.0 - ratio) * p)
-            if (p >= 1) window.clearInterval(rampTimer)
+            if (p >= 1) {
+              if (this.tempoRampTimer !== undefined) {
+                window.clearInterval(this.tempoRampTimer)
+                this.tempoRampTimer = undefined
+              }
+              this.rampingDeck = null
+            }
           }, 100)
         }
       }
@@ -184,12 +248,38 @@ export class Engine {
     })
   }
 
+  private cancelTempoRamp() {
+    if (this.tempoRampTimer !== undefined) {
+      window.clearInterval(this.tempoRampTimer)
+      this.tempoRampTimer = undefined
+    }
+    if (this.rampingDeck) {
+      const deck = this.rampingDeck.deck
+      this.rampingDeck = null
+      if (
+        'setRate' in deck &&
+        typeof (deck as unknown as { setRate?: (r: number) => void }).setRate === 'function'
+      ) {
+        (deck as unknown as { setRate: (r: number) => void }).setRate(1)
+      }
+    }
+  }
+
   private completeHandoff(outgoing: Deck) {
+    // Note: Tempo ramp timer is NOT cancelled here; it runs its full 8s across handoff
     this.fade = null
     outgoing.stop()
     this.liveIdx = 1 - this.liveIdx
     this.index++
     this.state = 'playing'
+    if (this.pendingUpcoming) {
+      const upcoming = this.pendingUpcoming
+      this.pendingUpcoming = null
+      const head = this.queue.slice(0, this.index + 1) // includes the song that just went live
+      const headIds = new Set(head.map((c) => c.song_id))
+      this.queue = [...head, ...upcoming.filter((c) => !headIds.has(c.song_id))]
+      this.notifyQueue()
+    }
     if (this.current) {
       this.emit({ type: 'live', cue: this.current })
     }
@@ -198,6 +288,17 @@ export class Engine {
 
   /** Load the next playable song into the idle deck. Skips unavailable ones. */
   async preloadNext(): Promise<void> {
+    if (this.state === 'fading') return
+
+    const nextCue = this.queue[this.index + 1]
+    if (
+      nextCue &&
+      this.idle.cue?.song_id === nextCue.song_id &&
+      (this.idle.status === 'ready' || this.idle.status === 'loading')
+    ) {
+      return
+    }
+
     const token = ++this.preloadToken
     let attempt = 0
     while (attempt < 5) {
@@ -212,6 +313,7 @@ export class Engine {
         if (token !== this.preloadToken) return
         this.emit({ type: 'unavailable', cue })
         this.queue.splice(i, 1) // remove the dead song, try the next
+        this.notifyQueue()
         attempt++
       }
     }
@@ -219,7 +321,12 @@ export class Engine {
 
   // ---- user controls ----
   skip() {
-    if (this.state === 'fading' || this.state === 'idle') return
+    this.cancelTempoRamp()
+    if (this.state === 'fading') {
+      this.fade?.finishNow()
+      return
+    }
+    if (this.state === 'idle') return
     if (this.current) {
       this.emit({ type: 'skip', cue: this.current, at: this.live.getTime() })
     }
@@ -272,12 +379,6 @@ export class Engine {
     this.emit({ type: 'playfull', cue, on: cue.play_full })
   }
 
-  /** Insert a song to play right after the current one. */
-  playNext(cue: Cue) {
-    this.queue.splice(this.index + 1, 0, cue)
-    void this.preloadNext()
-  }
-
   private finish() {
     this.state = 'ended'
     window.clearInterval(this.tickId)
@@ -287,6 +388,8 @@ export class Engine {
   }
 
   stopAll() {
+    this.cancelTempoRamp()
+    this.pendingUpcoming = null
     window.clearInterval(this.tickId)
     this.fade?.cancel()
     this.fade = null

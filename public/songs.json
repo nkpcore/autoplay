@@ -3,7 +3,11 @@
     "song_id": "kala-chashma-amar-arshi",
     "title": "Kala Chashma",
     "artist": "Amar Arshi, Badshah, Neha Kakkar",
-    "youtube_ids": ["cCmZ7aFU1xY", "hAA9TQyxQxk", "YApjPA6CypU"],
+    "youtube_ids": [
+      "cCmZ7aFU1xY",
+      "hAA9TQyxQxk",
+      "YApjPA6CypU"
+    ],
     "duration_sec": 192,
     "entry_sec": 22,
     "exit_sec": 129,
@@ -12,14 +16,21 @@
     "language": "hindi",
     "subtype": "dance",
     "energy": 10,
-    "tags": ["party", "bollywood", "banger"],
-    "verified": true
+    "tags": [
+      "party",
+      "bollywood",
+      "banger"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "slowly-slowly-guru-randhawa",
     "title": "Slowly Slowly",
     "artist": "Guru Randhawa ft. Pitbull",
-    "youtube_ids": ["hQC8EGwZuaM"],
+    "youtube_ids": [
+      "hQC8EGwZuaM"
+    ],
     "duration_sec": 210,
     "entry_sec": 25,
     "exit_sec": 135,
@@ -28,14 +39,21 @@
     "language": "punjabi",
     "subtype": "party",
     "energy": 9,
-    "tags": ["punjabi", "pop", "club"],
-    "verified": true
+    "tags": [
+      "punjabi",
+      "pop",
+      "club"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "jai-jai-shivshankar-vishal-shekhar",
     "title": "Jai Jai Shivshankar",
     "artist": "Vishal & Shekhar, Vishal Dadlani, Benny Dayal",
-    "youtube_ids": ["0wFAAQOcL0w"],
+    "youtube_ids": [
+      "0wFAAQOcL0w"
+    ],
     "duration_sec": 228,
     "entry_sec": 24,
     "exit_sec": 145,
@@ -44,14 +62,21 @@
     "language": "hindi",
     "subtype": "bollywood-hype",
     "energy": 9,
-    "tags": ["bollywood", "hype", "dance"],
-    "verified": true
+    "tags": [
+      "bollywood",
+      "hype",
+      "dance"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "kar-gayi-chull-badshah",
     "title": "Kar Gayi Chull",
     "artist": "Badshah, Fazilpuria, Sukriti Kakar, Neha Kakkar",
-    "youtube_ids": ["NTHz9ephYTw"],
+    "youtube_ids": [
+      "NTHz9ephYTw"
+    ],
     "duration_sec": 187,
     "entry_sec": 18,
     "exit_sec": 125,
@@ -60,14 +85,20 @@
     "language": "hindi",
     "subtype": "party",
     "energy": 8,
-    "tags": ["party", "bollywood"],
-    "verified": true
+    "tags": [
+      "party",
+      "bollywood"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "gasolina-daddy-yankee",
     "title": "Gasolina",
     "artist": "Daddy Yankee",
-    "youtube_ids": ["CCF1_jI8Prk"],
+    "youtube_ids": [
+      "CCF1_jI8Prk"
+    ],
     "duration_sec": 195,
     "entry_sec": 12,
     "exit_sec": 110,
@@ -76,14 +107,21 @@
     "language": "spanish",
     "subtype": "reggaeton",
     "energy": 9,
-    "tags": ["reggaeton", "classic", "hype"],
-    "verified": true
+    "tags": [
+      "reggaeton",
+      "classic",
+      "hype"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "levitating-dua-lipa",
     "title": "Levitating",
     "artist": "Dua Lipa",
-    "youtube_ids": ["TUVcZfQe-Kw"],
+    "youtube_ids": [
+      "TUVcZfQe-Kw"
+    ],
     "duration_sec": 203,
     "entry_sec": 15,
     "exit_sec": 120,
@@ -92,14 +130,21 @@
     "language": "english",
     "subtype": "pop-dance",
     "energy": 8,
-    "tags": ["pop", "disco", "club"],
-    "verified": true
+    "tags": [
+      "pop",
+      "disco",
+      "club"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "one-dance-drake",
     "title": "One Dance",
     "artist": "Drake ft. Wizkid, Kyla",
-    "youtube_ids": ["iAbnEUA0VpA"],
+    "youtube_ids": [
+      "iAbnEUA0VpA"
+    ],
     "duration_sec": 174,
     "entry_sec": 10,
     "exit_sec": 115,
@@ -108,14 +153,21 @@
     "language": "english",
     "subtype": "afrobeats",
     "energy": 7,
-    "tags": ["afrobeats", "vibes", "smooth"],
-    "verified": true
+    "tags": [
+      "afrobeats",
+      "vibes",
+      "smooth"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "danza-kuduro-don-omar",
     "title": "Danza Kuduro",
     "artist": "Don Omar ft. Lucenzo",
-    "youtube_ids": ["7zp1TbLFPp8"],
+    "youtube_ids": [
+      "7zp1TbLFPp8"
+    ],
     "duration_sec": 204,
     "entry_sec": 20,
     "exit_sec": 130,
@@ -124,14 +176,21 @@
     "language": "spanish",
     "subtype": "reggaeton",
     "energy": 9,
-    "tags": ["latin", "hype", "party"],
-    "verified": true
+    "tags": [
+      "latin",
+      "hype",
+      "party"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "starboy-the-weeknd",
     "title": "Starboy",
     "artist": "The Weeknd ft. Daft Punk",
-    "youtube_ids": ["34Na4j8AVgA"],
+    "youtube_ids": [
+      "34Na4j8AVgA"
+    ],
     "duration_sec": 230,
     "entry_sec": 18,
     "exit_sec": 130,
@@ -140,14 +199,20 @@
     "language": "english",
     "subtype": "pop-dance",
     "energy": 8,
-    "tags": ["pop", "electronic"],
-    "verified": true
+    "tags": [
+      "pop",
+      "electronic"
+    ],
+    "verified": false,
+    "unsure": true
   },
   {
     "song_id": "o-sajna-neha-kakkar",
     "title": "O Sajna",
     "artist": "Neha Kakkar",
-    "youtube_ids": ["jH7DswqM0_g"],
+    "youtube_ids": [
+      "jH7DswqM0_g"
+    ],
     "duration_sec": 190,
     "entry_sec": 15,
     "exit_sec": 115,
@@ -156,7 +221,12 @@
     "language": "hindi",
     "subtype": "dance",
     "energy": 8,
-    "tags": ["remix", "bollywood", "dance"],
-    "verified": true
+    "tags": [
+      "remix",
+      "bollywood",
+      "dance"
+    ],
+    "verified": false,
+    "unsure": true
   }
 ]

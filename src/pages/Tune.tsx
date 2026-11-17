@@ -727,6 +727,9 @@ export default function Tune() {
               <p>
                 &bull; <strong>Energy:</strong> 10 = everyone screams, 7 = peak dance, 5 = groove/background, 2 = slow ballad.
               </p>
+              <p>
+                &bull; <strong>Shortcuts:</strong> Left/Right seek 1s (Shift+Left/Right seek 5s), Space play/pause, I/O set entry/exit, P preview transition, Enter save cue.
+              </p>
             </div>
           </details>
         </div>

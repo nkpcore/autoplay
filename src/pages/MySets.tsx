@@ -1,17 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSavedSets, renameSet, deleteSet, buildShareLink, type SavedSet } from '../data/mySets'
 
 export default function MySets() {
   const navigate = useNavigate()
-  const [sets, setSets] = useState<SavedSet[]>([])
+  const [sets, setSets] = useState<SavedSet[]>(() => getSavedSets())
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
-
-  useEffect(() => {
-    setSets(getSavedSets())
-  }, [])
 
   const handlePlay = (set: SavedSet) => {
     navigate(`/play?ids=${set.songIds.join(',')}`)

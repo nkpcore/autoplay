@@ -19,6 +19,7 @@ import SearchModal from '../components/SearchModal'
 import Hotkeys from '../components/Hotkeys'
 import StartGate from '../components/StartGate'
 import RoomModal from '../components/RoomModal'
+import DebugPanel from '../components/DebugPanel'
 import {
   createHostRoom,
   makeRoomId,
@@ -34,6 +35,7 @@ export default function Player() {
 
   // Store state
   const {
+    engine,
     queue,
     index,
     engineState,
@@ -151,7 +153,7 @@ export default function Player() {
       window.clearInterval(broadcastInterval)
       room?.close()
     }
-  }, [roomId, catalog, broadcastRoomState, playNext])
+  }, [roomId, catalog, broadcastRoomState, playNext, setStatusMessage])
 
   // 1. Initial Queue Resolution
   useEffect(() => {
@@ -182,8 +184,11 @@ export default function Player() {
           const result = planSet(songs, answers, seed)
           resolvedCues = result.cues
           if (result.note) setStatusMessage(result.note)
-        } else if (queue.length > 0) {
-          resolvedCues = queue.map((item) => item.cue)
+        } else {
+          const storedQueue = useStore.getState().queue
+          if (storedQueue.length > 0) {
+            resolvedCues = storedQueue.map((item) => item.cue)
+          }
         }
 
         if (resolvedCues.length === 0) {
@@ -205,7 +210,18 @@ export default function Player() {
     return () => {
       unmounted = true
     }
-  }, [idsParam, langParam, subParam, timeParam, crowdParam, seedParam, navigate])
+  }, [
+    idsParam,
+    langParam,
+    subParam,
+    timeParam,
+    crowdParam,
+    seedParam,
+    navigate,
+    setStatusMessage,
+    setQueue,
+    setCurrentCue,
+  ])
 
   // 2. Start the Party via StartGate User Gesture
   const handleStartParty = async () => {
@@ -349,7 +365,7 @@ export default function Player() {
       <Glow cue={currentCue} state={engineState} />
 
       {/* Global Hotkeys (Space, s, f, /) */}
-      <Hotkeys engine={engineRef.current} onFocusSearch={() => setIsSearchOpen(true)} />
+      <Hotkeys engine={engine} onFocusSearch={() => setIsSearchOpen(true)} />
 
       {/* StartGate Screen Overlay (T14) */}
       {!started && (
@@ -516,14 +532,14 @@ export default function Player() {
 
         {/* Waveform Scrubber (T26) */}
         <div className="pt-2">
-          <Waveform cue={currentCue} engine={engineRef.current} onSeek={handleSeek} />
+          <Waveform cue={currentCue} engine={engine} onSeek={handleSeek} />
         </div>
 
         {/* Playback Controls (T15) */}
         <div className="flex items-center justify-center gap-4 py-2">
           {/* Pause / Resume Button */}
           <button
-            onClick={() => engineRef.current?.togglePause()}
+            onClick={() => engine?.togglePause()}
             type="button"
             aria-label={engineState === 'paused' ? 'Resume' : 'Pause'}
             className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 cursor-pointer transition-transform transform active:scale-95"
@@ -541,7 +557,7 @@ export default function Player() {
 
           {/* Skip Button */}
           <button
-            onClick={() => engineRef.current?.skip()}
+            onClick={() => engine?.skip()}
             type="button"
             aria-label="Skip track"
             className="p-4 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 shadow cursor-pointer transition-all active:scale-95"
@@ -553,7 +569,7 @@ export default function Player() {
 
           {/* Full Track Toggle Button */}
           <button
-            onClick={() => engineRef.current?.togglePlayFull()}
+            onClick={() => engine?.togglePlayFull()}
             type="button"
             aria-label="Toggle full track"
             className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
@@ -583,6 +599,14 @@ export default function Player() {
           />
         </div>
       </main>
+
+      {/* Development Debug Panel (Doc 11 section 1) */}
+      <DebugPanel
+        engine={engine}
+        currentCue={currentCue}
+        queueLength={queue.length}
+        engineState={engineState}
+      />
 
       {/* Footer Hotkey Helper */}
       <footer className="relative z-10 py-3 text-center text-[11px] text-zinc-600">

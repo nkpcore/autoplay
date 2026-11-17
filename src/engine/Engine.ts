@@ -248,7 +248,11 @@ export class Engine {
   }
 
   togglePause() {
-    this.state === 'paused' ? this.resume() : this.pause()
+    if (this.state === 'paused') {
+      this.resume()
+    } else {
+      this.pause()
+    }
   }
 
   /** User dragged the waveform. */

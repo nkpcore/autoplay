@@ -23,8 +23,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50)
-    } else {
-      setQuery('')
     }
   }, [isOpen])
 

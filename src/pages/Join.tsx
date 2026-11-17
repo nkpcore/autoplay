@@ -4,6 +4,7 @@ import type { Cue } from '../data/types'
 import { loadSongs } from '../data/loadSongs'
 import { searchSongs } from '../planner/searchSongs'
 import { connectGuestRoom, type RoomState, type GuestRoomConnection } from '../services/rooms'
+import { supabase } from '../services/supabase'
 
 const GUEST_ID_KEY = 'pa.guestId'
 
@@ -27,7 +28,7 @@ export default function Join() {
 
   const [roomState, setRoomState] = useState<RoomState | null>(null)
   const [catalog, setCatalog] = useState<Cue[]>([])
-  const [connecting, setConnecting] = useState(true)
+  const [connecting, setConnecting] = useState(() => Boolean(roomId && supabase))
   const [query, setQuery] = useState('')
   const [cooldownSec, setCooldownSec] = useState(0)
   const [statusNotice, setStatusNotice] = useState<string | null>(null)
@@ -54,8 +55,6 @@ export default function Join() {
 
     if (conn) {
       conn.sendHello(guestId)
-    } else {
-      setConnecting(false)
     }
 
     // Cooldown ticker

@@ -52,10 +52,10 @@
 - [x] T41 Requests + votes + vetoes
 - [x] T42 Host rules
 ## Phase 9 — Beats
-- [ ] T43 BPM estimator worker
-- [ ] T44 Snap cuts to beats
-- [ ] T45 Tempo nudge + transition styles
+- [x] T43 BPM estimator worker
+- [x] T44 Snap cuts to beats
+- [x] T45 Tempo nudge + transition styles
 ## Phase 10 — Ship
-- [ ] T46 Error states + empty states
-- [ ] T47 Deploy to Cloudflare Pages
-- [ ] T48 Full QA checklist (see 11)
+- [x] T46 Error states + empty states
+- [x] T47 Deploy to Cloudflare Pages
+- [x] T48 Full QA checklist (see 11)

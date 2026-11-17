@@ -76,7 +76,7 @@ async function runTests() {
   await new Promise<void>((resolve, reject) => {
     let lastIn = -1
     let lastOut = -1
-    const handle = equalPowerFade({
+    equalPowerFade({
       durationMs: 200,
       stepMs: 20,
       onStep: (inGain, outGain) => {

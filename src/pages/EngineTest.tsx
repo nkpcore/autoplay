@@ -27,6 +27,7 @@ export default function EngineTest() {
 
   // Engine state
   const engineRef = useRef<Engine | null>(null)
+  const [engineInstance, setEngineInstance] = useState<Engine | null>(null)
   const [engineState, setEngineState] = useState<string>('idle')
   const [currentCue, setCurrentCue] = useState<Cue | null>(null)
   const [eventsLog, setEventsLog] = useState<string[]>([])
@@ -141,6 +142,7 @@ export default function EngineTest() {
       hardCut: isHardCutMode,
     })
     engineRef.current = engine
+    setEngineInstance(engine)
 
     engine.on((e: EngineEvent) => {
       const msg = `[${new Date().toLocaleTimeString()}] Event: ${e.type}${
@@ -218,6 +220,7 @@ export default function EngineTest() {
       hardCut: isHardCutMode,
     })
     engineRef.current = engine
+    setEngineInstance(engine)
 
     engine.on((e: EngineEvent) => {
       const msg = `[${new Date().toLocaleTimeString()}] Event: ${e.type}${
@@ -252,7 +255,7 @@ export default function EngineTest() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 bg-black text-white min-h-screen">
-      <Hotkeys engine={engineRef.current} />
+      <Hotkeys engine={engineInstance} />
 
       {showStartGate && (
         <StartGate

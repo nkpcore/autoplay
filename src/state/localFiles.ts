@@ -40,7 +40,6 @@ export async function processLocalFiles(
 
     let durationSec = 180
     let gainDb = 0
-    let bpm: number | undefined
 
     try {
       const buffer = await file.arrayBuffer()
@@ -66,7 +65,6 @@ export async function processLocalFiles(
       energy: 8,
       tags: ['local', 'offline'],
       gain_db: gainDb,
-      bpm,
       verified: true,
     }
 

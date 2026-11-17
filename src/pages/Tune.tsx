@@ -9,7 +9,14 @@ const STORAGE_KEY = 'pa.tune.edits'
 export default function Tune() {
   // Catalog & Local edits
   const [songs, setSongs] = useState<Cue[]>([])
-  const [edits, setEdits] = useState<Record<string, Cue>>({})
+  const [edits, setEdits] = useState<Record<string, Cue>>(() => {
+    try {
+      const rawEdits = localStorage.getItem(STORAGE_KEY)
+      return rawEdits ? (JSON.parse(rawEdits) as Record<string, Cue>) : {}
+    } catch {
+      return {}
+    }
+  })
   const [filterUnsure, setFilterUnsure] = useState(false)
   const [selectedSongId, setSelectedSongId] = useState<string | null>(null)
 
@@ -86,16 +93,6 @@ export default function Tune() {
     }
 
     void init()
-
-    // Load edits from localStorage
-    try {
-      const rawEdits = localStorage.getItem(STORAGE_KEY)
-      if (rawEdits) {
-        setEdits(JSON.parse(rawEdits) as Record<string, Cue>)
-      }
-    } catch {
-      /* ignore */
-    }
 
     // Load initial songs
     loadSongs()

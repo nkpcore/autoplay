@@ -7,20 +7,25 @@ This document tracks known browser, OS, and API behaviors documented during QA, 
 ## Manual Test Status (Real Hardware Verification)
 
 > [!IMPORTANT]
-> All core mathematical, state machine, and algorithmic logic are verified via automated headless test suites (`npm test` via Vite SSR in `scripts/testEngine.ts`). **None of the behaviors below have been tested on real physical hardware**:
+> All core mathematical, state machine, and algorithmic logic are verified via automated headless test suites (`npm test` via Vite SSR in `scripts/testEngine.ts`). **PartyAux has NOT been tested on physical mobile phones, tablets, or sound hardware.**
 
 ### Items NOT tested on physical hardware:
 1. **Physical iOS Safari Audio & YouTube Autoplay:**
-   - Dual YouTube IFrames running simultaneously on real physical iPhones/iPads with iOS Safari autoplay policies.
+   - Dual YouTube IFrames running simultaneously on real physical iPhones/iPads with iOS Safari autoplay and background audio policies.
    - Hard-cut transition behavior when switching audio streams while outputting through a physical lightning/USB-C 3.5mm aux adapter or Bluetooth speaker.
-   - Screen Wake Lock API (`navigator.wakeLock`) behavior on iOS when the device enters low-power battery saving mode.
+   - Screen Wake Lock API (`navigator.wakeLock`) behavior on iOS when the device enters low-power battery saving mode or auto-locks.
 2. **Physical Android Media Session & Lock-Screen UI:**
    - Physical Android pull-down notification shade and lock-screen widget MediaSession controls (play, pause, next).
-   - Bluetooth AVRCP metadata and track duration display on automotive head units or Bluetooth speakers.
-3. **Physical Mobile Web Worker & Codec Limits:**
+   - Bluetooth AVRCP metadata and track duration display on automotive head units, smartwatches, or Bluetooth speakers.
+3. **PWA Installation & Standalone Mobile Execution:**
+   - "Add to Home Screen" installation flow and standalone window rendering on iOS Safari and Android Chrome.
+   - Offline Service Worker asset precaching (`workbox-*.js`, `manifest.webmanifest`, `icon-*.png`) on physical mobile devices.
+4. **Physical Mobile Web Worker & Codec Limits:**
    - Importing 50+ local audio files (MP3, AAC, FLAC) simultaneously on memory-constrained mobile devices using `AudioContext.decodeAudioData` and the BPM Web Worker.
-4. **Live Multi-Device Supabase Realtime in Physical Venue:**
-   - Real-world guest QR-code scanning and simultaneous voting/vetoing across mixed cellular (5G/LTE) and venue Wi-Fi networks connected to an active production Supabase project.
+5. **Live Multi-Device Supabase Realtime in Physical Venue:**
+   - Real-world guest QR-code scanning via native camera apps and simultaneous voting/vetoing across mixed cellular (5G/LTE) and venue Wi-Fi networks connected to an active production Supabase project.
+6. **Mobile Network Conditions & Ad Blockers:**
+   - YouTube IFrame API script load failures under strict content blockers (e.g. Brave, AdGuard, Safari content blockers) or restrictive cellular data savers.
 
 ### Items Verified via Automated Test Suites:
 - Equal-power fade mathematical power invariant ($\text{inGain}^2 + \text{outGain}^2 = 1$).

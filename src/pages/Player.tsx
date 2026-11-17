@@ -10,6 +10,7 @@ import { isIOS } from '../engine/platform'
 import { useStore } from '../state/useStore'
 import { saveSet } from '../data/mySets'
 import { keepAwake, setMediaSession } from '../utils/mediaSession'
+import { logEvent } from '../services/telemetry'
 
 import Glow from '../components/Glow'
 import Waveform from '../components/Waveform'
@@ -149,6 +150,7 @@ export default function Player() {
 
       // Engine Event Listeners
       engine.on((e: EngineEvent) => {
+        logEvent(e)
         setEngineState(engine.state)
         setCurrentCue(engine.current ?? null)
         setIndex(engine.index)

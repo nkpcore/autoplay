@@ -1,0 +1,32 @@
+name: tune-cues
+on:
+  schedule:
+    - cron: '30 21 * * *' # Nightly at 21:30 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  tune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: node scripts/tuneFromEvents.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: tune party cues from crowd seeks'
+          title: 'Proposed Cue Tuning from Telemetry'
+          body-path: tune-report.md
+          branch: bot/tune-cues
+          delete-branch: true

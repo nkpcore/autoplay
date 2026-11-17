@@ -38,10 +38,10 @@
 - [x] T30 Wake lock + Media Session
 - [x] T31 PWA
 ## Phase 6 — Local files (Web Audio)
-- [ ] T32 File import UI
-- [ ] T33 WebAudioDeck
-- [ ] T34 Loudness measure + gain
-- [ ] T35 Deck factory in Engine
+- [x] T32 File import UI
+- [x] T33 WebAudioDeck
+- [x] T34 Loudness measure + gain
+- [x] T35 Deck factory in Engine
 ## Phase 7 — Telemetry
 - [ ] T36 Event logger
 - [ ] T37 Supabase table + policy

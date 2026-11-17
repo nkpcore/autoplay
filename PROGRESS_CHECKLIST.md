@@ -6,7 +6,7 @@
 - [x] T03 Folders + router skeleton
 ## Phase 1 — Data
 - [x] T04 Types
-- [ ] T05 Validation + loadSongs
+- [x] T05 Validation + loadSongs
 - [ ] T06 Seed songs.json (human supplies data)
 ## Phase 2 — YouTube engine
 - [ ] T07 YouTube API loader

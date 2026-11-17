@@ -3,6 +3,7 @@ import type { Cue, Era } from '../data/types'
 import { loadSongs } from '../data/loadSongs'
 import { validateCue } from '../data/validate'
 import { loadYouTubeApi } from '../engine/youtubeApi'
+import { showToast } from '../components/Toast'
 
 const STORAGE_KEY = 'pa.tune.edits'
 
@@ -290,7 +291,7 @@ export default function Tune() {
     if (next) {
       handleSelectSong(next)
     } else {
-      alert('No more unsure songs in catalog!')
+      showToast('No more unsure songs in catalog!')
     }
   }, [songs, edits, selectedSongId, handleSelectSong])
 

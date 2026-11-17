@@ -5,6 +5,7 @@ import { YouTubeDeck } from '../engine/YouTubeDeck'
 import { Engine } from '../engine/Engine'
 import { equalPowerFade } from '../engine/crossfade'
 import { isIOS } from '../engine/platform'
+import { showToast } from '../components/Toast'
 import { Hotkeys } from '../components/Hotkeys'
 import { StartGate } from '../components/StartGate'
 
@@ -58,7 +59,7 @@ export default function EngineTest() {
     const songs = await loadSongs()
     const first = songs[0]
     if (!first) {
-      alert('No songs available')
+      showToast('No songs available')
       return
     }
 
@@ -78,7 +79,7 @@ export default function EngineTest() {
     const songs = await loadSongs()
     const second = songs[1]
     if (!second) {
-      alert('Need at least 2 songs')
+      showToast('Need at least 2 songs')
       return
     }
 
@@ -95,7 +96,7 @@ export default function EngineTest() {
     const deckA = deckARef.current
     const deckB = deckBRef.current
     if (!deckA || !deckB) {
-      alert('Initialize both decks first')
+      showToast('Initialize both decks first')
       return
     }
 
@@ -127,7 +128,7 @@ export default function EngineTest() {
     if (!mountARef.current || !mountBRef.current) return
     const songs = await loadSongs()
     if (songs.length === 0) {
-      alert('No songs available')
+      showToast('No songs available')
       return
     }
 

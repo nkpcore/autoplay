@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { processLocalFiles } from '../state/localFiles'
 import { useStore } from '../state/useStore'
+import { showToast } from '../components/Toast'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ export default function Home() {
         navigate('/play?mode=local')
       }
     } catch (err) {
-      alert(`Error importing local files: ${err instanceof Error ? err.message : String(err)}`)
+      showToast(`Error importing local files: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setImporting(false)
       setProgressText('')

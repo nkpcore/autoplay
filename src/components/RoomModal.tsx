@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
+import { showToast } from './Toast'
 
 interface RoomModalProps {
   isOpen: boolean
@@ -29,7 +30,7 @@ export const RoomModal: React.FC<RoomModalProps> = ({ isOpen, onClose, roomId })
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      alert(`Join URL:\n${joinUrl}`)
+      showToast(`Join URL:\n${joinUrl}`)
     }
   }
 

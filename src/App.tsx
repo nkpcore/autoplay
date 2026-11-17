@@ -7,6 +7,7 @@ import Tune from './pages/Tune'
 import MySets from './pages/MySets'
 import Join from './pages/Join'
 import EngineTest from './pages/EngineTest'
+import Toast from './components/Toast'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/join/:roomId?" element={<Join />} />
             <Route path="/engine-test" element={<EngineTest />} />
           </Routes>
+          <Toast />
         </div>
       </BrowserRouter>
     </ErrorBoundary>

@@ -21,6 +21,7 @@ import StartGate from '../components/StartGate'
 import RoomModal from '../components/RoomModal'
 import { HostRulesModal } from '../components/HostRulesModal'
 import DebugPanel from '../components/DebugPanel'
+import { showToast } from '../components/Toast'
 import {
   createHostRoom,
   makeRoomId,
@@ -469,7 +470,7 @@ export default function Player() {
       setStarted(true)
     } catch (err) {
       console.error('Error starting party engine:', err)
-      alert(`Could not start party: ${err instanceof Error ? err.message : String(err)}`)
+      showToast(`Could not start party: ${err instanceof Error ? err.message : String(err)}`)
     }
   }
 
@@ -540,7 +541,7 @@ export default function Player() {
     saveSet(saveSetName, songIds)
     setIsSavingSet(false)
     setSaveSetName('')
-    alert('Set saved to My Sets!')
+    showToast('Set saved to My Sets!')
   }
 
   // Seek handler

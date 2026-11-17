@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSavedSets, renameSet, deleteSet, buildShareLink, type SavedSet } from '../data/mySets'
+import { showToast } from '../components/Toast'
 
 export default function MySets() {
   const navigate = useNavigate()
@@ -38,7 +39,7 @@ export default function MySets() {
       setCopiedId(set.id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch {
-      alert(`Share link:\n${link}`)
+      showToast(`Share link:\n${link}`)
     }
   }
 

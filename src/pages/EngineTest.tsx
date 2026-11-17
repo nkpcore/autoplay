@@ -5,7 +5,7 @@ import { YouTubeDeck } from '../engine/YouTubeDeck'
 import { Engine } from '../engine/Engine'
 import { equalPowerFade } from '../engine/crossfade'
 import { isIOS } from '../engine/platform'
-import { showToast } from '../components/Toast'
+import { showToast } from '../state/useToast'
 import { Hotkeys } from '../components/Hotkeys'
 import { StartGate } from '../components/StartGate'
 

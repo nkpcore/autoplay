@@ -21,7 +21,7 @@ import StartGate from '../components/StartGate'
 import RoomModal from '../components/RoomModal'
 import { HostRulesModal } from '../components/HostRulesModal'
 import DebugPanel from '../components/DebugPanel'
-import { showToast } from '../components/Toast'
+import { showToast } from '../state/useToast'
 import {
   createHostRoom,
   makeRoomId,

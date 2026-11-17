@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
-import { showToast } from './Toast'
+import { showToast } from '../state/useToast'
 
 interface RoomModalProps {
   isOpen: boolean

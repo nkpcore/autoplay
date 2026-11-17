@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSavedSets, renameSet, deleteSet, buildShareLink, type SavedSet } from '../data/mySets'
-import { showToast } from '../components/Toast'
+import { showToast } from '../state/useToast'
 
 export default function MySets() {
   const navigate = useNavigate()

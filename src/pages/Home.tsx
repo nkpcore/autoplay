@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { processLocalFiles } from '../state/localFiles'
 import { useStore } from '../state/useStore'
-import { showToast } from '../components/Toast'
+import { showToast } from '../state/useToast'
 
 export default function Home() {
   const navigate = useNavigate()
